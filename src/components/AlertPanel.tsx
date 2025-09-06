@@ -69,7 +69,7 @@ export const AlertPanel: React.FC<AlertPanelProps> = ({ sensorData }) => {
   useEffect(() => {
     const newActiveAlerts = alertRules.filter(rule => {
       const value = sensorData[rule.sensor];
-      if (value === null) return false;
+      if (value === null || typeof value !== 'number') return false;
 
       return rule.condition === 'greater' 
         ? value > rule.threshold 

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Thermometer, Droplets, Weight } from 'lucide-react';
+import { Thermometer, Droplets, Weight, Battery, CloudDrizzle, Mic, DoorOpen, MapPin } from 'lucide-react';
 import { SensorGauge } from '@/components/SensorGauge';
 import { HistoricalChart } from '@/components/HistoricalChart';
 import { MqttConnectionForm } from '@/components/MqttConnectionForm';
 import { AlertPanel } from '@/components/AlertPanel';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMqttConnection } from '@/hooks/useMqttConnection';
 
 const Index = () => {
@@ -47,7 +48,7 @@ const Index = () => {
         />
 
         {/* Sensor Gauges */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SensorGauge
             title="Temperature"
             value={sensorData.temperature}
@@ -80,6 +81,106 @@ const Index = () => {
             warningThreshold={{ min: 20 }}
             criticalThreshold={{ min: 10 }}
           />
+          
+          <SensorGauge
+            title="Battery"
+            value={sensorData.battery}
+            unit="%"
+            min={0}
+            max={100}
+            icon={<Battery className="w-5 h-5 text-primary-foreground" />}
+            warningThreshold={{ min: 20 }}
+            criticalThreshold={{ min: 10 }}
+          />
+        </div>
+
+        {/* Additional Sensors */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <SensorGauge
+            title="External Humidity"
+            value={sensorData.humidityExternal}
+            unit="%"
+            min={0}
+            max={100}
+            icon={<CloudDrizzle className="w-5 h-5 text-primary-foreground" />}
+            warningThreshold={{ max: 85 }}
+            criticalThreshold={{ max: 95 }}
+          />
+          
+          <SensorGauge
+            title="Sound Level"
+            value={sensorData.microphone}
+            unit="dB"
+            min={0}
+            max={120}
+            icon={<Mic className="w-5 h-5 text-primary-foreground" />}
+            warningThreshold={{ max: 80 }}
+            criticalThreshold={{ max: 100 }}
+          />
+          
+          <Card className="bg-gradient-subtle border-amber/20 shadow-warm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-card-foreground">Door Status</CardTitle>
+              <div className="p-2 bg-gradient-honey rounded-lg">
+                <DoorOpen className="w-5 h-5 text-primary-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">
+                <span className={sensorData.door === null ? 'text-muted-foreground' : 
+                  sensorData.door ? 'text-warning' : 'text-success'}>
+                  {sensorData.door === null ? '--' : 
+                   sensorData.door ? 'OPEN' : 'CLOSED'}
+                </span>
+              </div>
+              <div className="text-center">
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  sensorData.door === null ? 'bg-muted text-muted-foreground' :
+                  sensorData.door ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300' :
+                  'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    sensorData.door === null ? 'bg-muted-foreground' :
+                    sensorData.door ? 'bg-orange-500' : 'bg-green-500'
+                  }`} />
+                  {sensorData.door === null ? 'No Data' :
+                   sensorData.door ? 'Open' : 'Secure'}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-subtle border-amber/20 shadow-warm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-card-foreground">GPS Location</CardTitle>
+              <div className="p-2 bg-gradient-honey rounded-lg">
+                <MapPin className="w-5 h-5 text-primary-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm font-mono mb-2">
+                {sensorData.gps ? (
+                  <>
+                    <div>Lat: {sensorData.gps.lat.toFixed(6)}</div>
+                    <div>Lon: {sensorData.gps.lon.toFixed(6)}</div>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">No GPS data</span>
+                )}
+              </div>
+              <div className="text-center">
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  sensorData.gps === null ? 'bg-muted text-muted-foreground' :
+                  'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    sensorData.gps === null ? 'bg-muted-foreground' : 'bg-green-500'
+                  }`} />
+                  {sensorData.gps === null ? 'No Signal' : 'Located'}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Charts and Alerts */}
@@ -105,10 +206,18 @@ const Index = () => {
               
               <HistoricalChart
                 data={historicalData}
-                title="Weight"
-                dataKey="weight"
-                unit="kg"
-                color="#4CAF50"
+                title="Battery Level"
+                dataKey="battery"
+                unit="%"
+                color="#9333EA"
+              />
+              
+              <HistoricalChart
+                data={historicalData}
+                title="External Humidity"
+                dataKey="humidityExternal"
+                unit="%"
+                color="#06B6D4"
               />
             </div>
           </div>
@@ -122,7 +231,7 @@ const Index = () => {
         {/* Footer Info */}
         <footer className="text-center text-sm text-muted-foreground pt-8 border-t border-border">
           <p>
-            🐝 Beehouse IoT Dashboard - Monitoring topics: beehouse/sensor/temperature, beehouse/sensor/humidity, beehouse/sensor/weight
+            🐝 Beehouse IoT Dashboard - Topics: temperature, humidity, weight, battery, gps, microphone, door, humidity_external
           </p>
           <p className="mt-2">
             Connect your ESP32 to HiveMQ broker and start monitoring your hive in real-time

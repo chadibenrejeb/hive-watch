@@ -13,6 +13,11 @@ export interface SensorData {
   temperature: number | null;
   humidity: number | null;
   weight: number | null;
+  battery: number | null;
+  gps: { lat: number; lon: number } | null;
+  microphone: number | null;
+  door: boolean | null;
+  humidityExternal: number | null;
   timestamp: Date;
 }
 
@@ -29,6 +34,11 @@ const defaultSensorData: SensorData = {
   temperature: null,
   humidity: null,
   weight: null,
+  battery: null,
+  gps: null,
+  microphone: null,
+  door: null,
+  humidityExternal: null,
   timestamp: new Date(),
 };
 
@@ -42,7 +52,8 @@ export const useMqttConnection = (): UseMqttConnectionReturn => {
 
   // Update historical data when sensor data changes
   useEffect(() => {
-    if (sensorData.temperature !== null || sensorData.humidity !== null || sensorData.weight !== null) {
+    if (sensorData.temperature !== null || sensorData.humidity !== null || sensorData.weight !== null || 
+        sensorData.battery !== null || sensorData.microphone !== null || sensorData.humidityExternal !== null) {
       setHistoricalData(prev => {
         const newData = [...prev, { ...sensorData, timestamp: new Date() }];
         // Keep only last 50 data points
@@ -78,7 +89,12 @@ export const useMqttConnection = (): UseMqttConnectionReturn => {
       const topics = [
         'beehouse/sensor/temperature',
         'beehouse/sensor/humidity',
-        'beehouse/sensor/weight'
+        'beehouse/sensor/weight',
+        'beehouse/sensor/battery',
+        'beehouse/sensor/gps',
+        'beehouse/sensor/microphone',
+        'beehouse/sensor/door',
+        'beehouse/sensor/humidity_external'
       ];
       
       topics.forEach(topic => {
@@ -92,20 +108,40 @@ export const useMqttConnection = (): UseMqttConnectionReturn => {
 
     client.on('message', (topic, message) => {
       try {
-        const value = parseFloat(message.toString());
+        const messageStr = message.toString();
         
         setSensorData(prev => {
           const updated = { ...prev };
           
           switch (topic) {
             case 'beehouse/sensor/temperature':
-              updated.temperature = value;
+              updated.temperature = parseFloat(messageStr);
               break;
             case 'beehouse/sensor/humidity':
-              updated.humidity = value;
+              updated.humidity = parseFloat(messageStr);
               break;
             case 'beehouse/sensor/weight':
-              updated.weight = value;
+              updated.weight = parseFloat(messageStr);
+              break;
+            case 'beehouse/sensor/battery':
+              updated.battery = parseFloat(messageStr);
+              break;
+            case 'beehouse/sensor/gps':
+              try {
+                const gpsData = JSON.parse(messageStr);
+                updated.gps = { lat: gpsData.lat, lon: gpsData.lon };
+              } catch {
+                console.error('Invalid GPS data format');
+              }
+              break;
+            case 'beehouse/sensor/microphone':
+              updated.microphone = parseFloat(messageStr);
+              break;
+            case 'beehouse/sensor/door':
+              updated.door = messageStr.toLowerCase() === 'true' || messageStr === '1';
+              break;
+            case 'beehouse/sensor/humidity_external':
+              updated.humidityExternal = parseFloat(messageStr);
               break;
           }
           
